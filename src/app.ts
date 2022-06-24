@@ -91,6 +91,7 @@ export class App {
             this.runningTime += this.engine.getDeltaTime();
         });
 
+        this.updateTrees();
     }
 
     createCanvas(): HTMLCanvasElement {

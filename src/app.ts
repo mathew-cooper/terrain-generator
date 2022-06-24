@@ -7,24 +7,29 @@ import treeDistributionShader from './shaders/treedistribution.fragment';
 
 import { poissonDiscSampler } from "./utils/poisson-disc-sampler";
 import { getSunPosition } from "./utils/sun-position";
+import { createStone } from "./utils/create-stone";
+import { randomInArray } from "./utils/random-in-array";
 
 const CHUNK_WIDTH = 256;
 const CHUNK_HEIGHT = 256;
 
-enum MeshID {
+export enum MeshID {
     TREE_POSITION_INSTANCE = 'tree-position-instance-mesh',
     TREE_POSITION_BASE = 'tree-position-base-mesh',
     TREE_INSTANCE = 'tree-instance',
     TREE_BASE = 'tree-base',
-    GROUND = 'ground'
+    GROUND = 'ground',
+    STONE_BASE = 'stone-base',
+    STONE_INSTANCE = 'stone-instance'
 };
-enum MaterialID {
+export enum MaterialID {
     TREE_POSITION = 'tree-position-mesh-material',
     TREE_TRUNK = 'tree-trunk-material',
     TREE_LEAVES = 'tree-leaves-material',
-    GROUND = 'ground-material'
+    GROUND = 'ground-material',
+    STONE = 'stone-material'
 };
-enum TextureID {
+export enum TextureID {
     TREE_DENSITY = 'tree-density-texture'
 };
 
@@ -55,11 +60,18 @@ export class App {
     public baseTreePositionMesh: Mesh;
     public validTreePositions: Vector2[];
 
+    // Stones
+    public stones: InstancedMesh[];
+    public stoneModels: Mesh[];
+
 
     constructor() {
         this.validTreePositions = [];
         this.trees = [];
         this.treeModels = [];
+        this.stones = [];
+        this.stoneModels = [];
+
         this.settings = defaultSettings;
 
         this.initShaders();
@@ -72,6 +84,8 @@ export class App {
 
         this.initPoissonDiscSampling();
         this.initTrees();
+        // this.initStones();
+
 
         this.gui = this.createGUI();
 
@@ -231,7 +245,7 @@ export class App {
                 const density = densities[i];
                 if (Math.random() < density) {
                     // Spawn a new tree using one of the pre-defined tree models.
-                    const treeModel = this.treeModels[Math.floor(Math.random()*this.treeModels.length)];
+                    const treeModel = randomInArray(this.treeModels);
                     const tree = treeModel.createInstance(MeshID.TREE_INSTANCE);
                     tree.position.x = position.x - (CHUNK_WIDTH/2);
                     tree.position.y = 0;
@@ -302,6 +316,39 @@ export class App {
         const sunData = getSunPosition(timeOfDay, 1000.0);
         this.sunLight.direction.copyFrom(sunData.direction);
         this.sunLight.position.copyFrom(sunData.position);
+    }
+
+    initStones() {
+        const stoneModel = createStone(this.scene);
+        this.stoneModels.push(stoneModel);
+
+        this.updateStones();
+    }
+
+    updateStones() {
+        // Remove all existing stones.
+        this.stones.forEach(stone => stone.dispose());
+        this.stones.splice(0);
+
+        // Place stones randomly
+        const nStones = 15;
+        const minRadius = 5.0;
+        for (let i = 0; i < nStones; ++i) {
+            const stoneModel = randomInArray(this.stoneModels);
+            const stone = stoneModel.createInstance(MeshID.STONE_INSTANCE);
+            stone.position.x = Math.random()*CHUNK_WIDTH - (CHUNK_WIDTH/2);
+            stone.position.z = Math.random()*CHUNK_HEIGHT - (CHUNK_HEIGHT/2);;
+
+            // Give the stone a random scale and rotation
+            stone.rotation.y = Scalar.RandomRange(0, 2*Math.PI);
+            stone.scaling.setAll(Scalar.RandomRange(0.8, 1.5));
+            console.log(i, stone.position);
+
+            // Let the stone cast shadows.
+            this.shadowGenerator.addShadowCaster(stone);
+
+            this.stones.push(stone);
+        }
     }
 
 }

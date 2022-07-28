@@ -1,6 +1,9 @@
 # terrain-generator
 Project for learning how to generate terrain
 
+![Birds eye view of terrain showing tree distribution matching shader texture](./devlog/Screenshot%202022-07-28%20145726.png)
+![Tilted view of terrain](./devlog/Screenshot%202022-07-28%20145859.png)
+
 ## Current functionality
 - Generate list of tree positions following a poisson disc distribution
 - Create a noise texture that acts as the tree density.
